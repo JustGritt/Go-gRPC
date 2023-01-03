@@ -10,6 +10,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Login godoc
+// @Summary Login
+// @Description Login
+// @Tags auth
+// @Accept  json
+// @Produce  json
+// @Param user body models.User true "User"
+// @Success 200 {object} models.User
+// @Failure 400 {object} string
+// @Router /login [post]
 func Login(c *fiber.Ctx) error {
 	var user models.User
 

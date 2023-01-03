@@ -30,6 +30,17 @@ func CreateResponseUser(user models.User) User {
 	}
 }
 
+// Create user godoc
+// @Summary Create user
+// @Description Create user
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param user body User true "User"
+// @Success 201 {object} User
+// @Failure 400 {string} string "Invalid request"
+// @Failure 500 {string} string "Error encrypting password"
+// @Router /api/users [post]
 func CreateUser(c *fiber.Ctx) error {
 	var user models.User
 	if err := c.BodyParser(&user); err != nil {
@@ -62,6 +73,15 @@ func GetUserId(id int, user *models.User) error {
 	return nil
 }
 
+// Get users godoc
+// @Summary Get users
+// @Description Get users
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} User
+// @Failure 404 {string} string "User not found"
+// @Router /api/users [get]
 func GetUsers(c *fiber.Ctx) error {
 	var users []models.User
 	database.Database.Db.Find(&users)
@@ -74,6 +94,16 @@ func GetUsers(c *fiber.Ctx) error {
 	return c.Status(200).JSON(responseUsers)
 }
 
+// Get user godoc
+// @Summary Get user
+// @Description Get user
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Success 200 {object} User
+// @Failure 404 {string} string "User not found"
+// @Router /api/users/{id} [get]
 func GetUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var user models.User
@@ -88,6 +118,19 @@ func GetUser(c *fiber.Ctx) error {
 	return c.Status(200).JSON(CreateResponseUser(user))
 }
 
+// Update user godoc
+// @Summary Update user
+// @Description Update user
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Param user body User true "User"
+// @Success 200 {object} User
+// @Failure 400 {string} string "Invalid request"
+// @Failure 404 {string} string "User not found"
+// @Failure 500 {string} string "Error encrypting password"
+// @Router /api/users/{id} [put]
 func UpdateUser(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 
@@ -140,6 +183,17 @@ func UpdateUser(c *fiber.Ctx) error {
 	return c.Status(200).JSON(responseUser)
 }
 
+// Delete user godoc
+// @Summary Delete user
+// @Description Delete user
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Success 200 {string} string "User deleted"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 404 {string} string "User not found"
+// @Router /api/users/{id} [delete]
 func DeleteUser(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 

@@ -4,44 +4,17 @@ import (
 	"github.com/JustGritt/go-grpc/database"
 	"github.com/JustGritt/go-grpc/routes"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
-
 	jwtware "github.com/gofiber/jwt/v3"
+	"github.com/gofiber/swagger"
+	"github.com/golang-jwt/jwt/v4" // gin-swagger middleware
+
+	_ "github.com/JustGritt/go-grpc/docs"
 )
 
 func welcome(c *fiber.Ctx) error {
 	return c.SendString("Welcome to Fiber!")
 }
 
-/*
-	func login(c *fiber.Ctx) error {
-		user := c.FormValue("user")
-		pass := c.FormValue("pass")
-
-		// Throws Unauthorized error
-		if user != "john" || pass != "doe" {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
-
-		// Create the Claims
-		claims := jwt.MapClaims{
-			"name":  "John Doe",
-			"admin": true,
-			"exp":   time.Now().Add(time.Hour * 72).Unix(),
-		}
-
-		// Create token
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		// Generate encoded token and send it as response.
-		t, err := token.SignedString([]byte("secret"))
-		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-
-		return c.JSON(fiber.Map{"token": t})
-	}
-*/
 func restricted(c *fiber.Ctx) error {
 	user := c.Locals("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
@@ -53,6 +26,7 @@ func restricted(c *fiber.Ctx) error {
 func setupRoutes(app *fiber.App) {
 	// Welcome
 	app.Get("/api", welcome)
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Login route
 	app.Post("/login", routes.Login)
@@ -101,6 +75,17 @@ func setupRoutes(app *fiber.App) {
 
 }
 
+// @title           Swagger Example API
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+// @host      localhost:3000
+// @BasePath  /api/v1
 func main() {
 	database.Connect()
 	app := fiber.New()
