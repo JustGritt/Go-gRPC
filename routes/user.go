@@ -4,12 +4,22 @@ import (
 	"github.com/JustGritt/go-grpc/database"
 	"github.com/JustGritt/go-grpc/models"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
 	ID        uint   `json:"id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
+	Password  string `json:"password"`
+}
+
+func validToken(t *jwt.Token, id int) bool {
+	n := id
+	claims := t.Claims.(jwt.MapClaims)
+	uid := int(claims["user_id"].(float64))
+	return uid == n
 }
 
 func CreateResponseUser(user models.User) User {
@@ -27,6 +37,16 @@ func CreateUser(c *fiber.Ctx) error {
 			"message": "Invalid request",
 		})
 	}
+
+	// encrypt password with bcrypt
+	pass, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Error encrypting password",
+		})
+	}
+
+	user.Password = string(pass)
 
 	database.Database.Db.Create(&user)
 
@@ -79,6 +99,12 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	err = GetUserId(id, &user)
 
+	token := c.Locals("user").(*jwt.Token)
+
+	if !validToken(token, id) {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Invalid token id", "data": nil})
+	}
+
 	if err != nil {
 		return c.Status(400).JSON(err.Error())
 	}
@@ -86,6 +112,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	type UpdateUser struct {
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
+		Password  string `json:"password"`
 	}
 
 	var updateData UpdateUser
@@ -94,8 +121,17 @@ func UpdateUser(c *fiber.Ctx) error {
 		return c.Status(500).JSON(err.Error())
 	}
 
+	// encrypt password with bcrypt
+	pass, err := bcrypt.GenerateFromPassword([]byte(updateData.Password), 14)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"message": "Error encrypting password",
+		})
+	}
+
 	user.FirstName = updateData.FirstName
 	user.LastName = updateData.LastName
+	user.Password = string(pass)
 
 	database.Database.Db.Save(&user)
 

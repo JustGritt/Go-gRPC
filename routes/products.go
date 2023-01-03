@@ -27,6 +27,16 @@ func CreateProduct(c *fiber.Ctx) error {
 		return c.Status(400).JSON(err.Error())
 	}
 
+	if product.Name == "" {
+		return c.Status(400).JSON("Product name is required")
+	}
+
+	var existingProduct models.Product
+	database.Database.Db.Where("name = ?", product.Name).First(&existingProduct)
+	if existingProduct.ID != 0 {
+		return c.Status(400).JSON("Product name already taken")
+	}
+
 	database.Database.Db.Create(&product)
 	responseProduct := CreateResponseProduct(product)
 	return c.Status(200).JSON(responseProduct)
