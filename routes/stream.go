@@ -1,42 +1,55 @@
 package routes
 
 import (
+	"bufio"
 	"fmt"
-	"time"
+	"sync"
 
+	"github.com/JustGritt/go-grpc/broadcast"
 	"github.com/JustGritt/go-grpc/database"
 	"github.com/JustGritt/go-grpc/models"
 	"github.com/gofiber/fiber/v2"
+	"github.com/valyala/fasthttp"
 )
 
 type Stream struct {
-	Notifier               chan []byte
+	Notifier               chan []models.Payment
 	newClients             chan chan []byte
 	closeClientConnections chan chan []byte
 	clients                map[chan []byte]bool
 }
 
+var once sync.Once
+var b = broadcast.NewBroker[models.Payment]()
+
 func GetStream(c *fiber.Ctx) error {
+	ctx := c.Context()
+	ctx.SetContentType("text/event-stream")
+	ctx.Response.Header.Set("Cache-Control", "no-cache")
+	ctx.Response.Header.Set("Connection", "keep-alive")
+	ctx.Response.Header.Set("Transfer-Encoding", "chunked")
+	ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
+	ctx.Response.Header.Set("Access-Control-Allow-Headers", "Cache-Control")
+	ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+
 	var payments []models.Payment
-	database.Database.Db.Find(&payments)
+	database.Database.Db.Last(&payments)
+	fmt.Println("payment ", payments)
 
 	if len(payments) == 0 {
 		return c.Status(404).JSON("No payments found")
 	}
 
-	go func() {
+	go b.Start()
+	ctx.SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
+		msgCh := b.Subscribe()
+		var i int
 		for {
-			var newPayments []models.Payment
-			database.Database.Db.Find(&newPayments)
-
-			if len(newPayments) > len(payments) {
-				payments = newPayments
-				fmt.Println("New payment made: ", payments[len(payments)-1])
-
-			}
-			time.Sleep(1 * time.Second)
+			i++
+			fmt.Fprintf(w, "%d\n", <-msgCh)
+			w.Flush()
 		}
-	}()
+	}))
 
-	return c.Status(200).JSON(CreateResponsePayments(payments))
+	return nil
 }

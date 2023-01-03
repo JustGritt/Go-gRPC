@@ -1,82 +1,53 @@
 package broadcast
 
-type Broadcaster interface {
-
-	// Register a new channel to receive broadcasts
-	Register(chan<- interface{})
-
-	// Unregister a channel so that it no longer receives broadcasts.
-	Unregister(chan<- interface{})
-
-	// Shut this broadcaster down.
-	Close() error
-	// Submit a new object to all subscribers
-	Submit(interface{})
+type Broker[T any] struct {
+	stopCh    chan struct{}
+	publishCh chan T
+	subCh     chan chan T
+	unsubCh   chan chan T
 }
 
-type broadcaster struct {
-	input chan interface{}
-	reg   chan chan<- interface{}
-	unreg chan chan<- interface{}
-
-	outputs map[chan<- interface{}]bool
-}
-
-func NewBroadcaster(buflen int) Broadcaster {
-	b := &broadcaster{
-		input:   make(chan interface{}, buflen),
-		reg:     make(chan chan<- interface{}),
-		unreg:   make(chan chan<- interface{}),
-		outputs: make(map[chan<- interface{}]bool),
-	}
-
-	go b.run()
-
-	return b
-}
-
-func (b *broadcaster) broadcast(m interface{}) {
-	for ch := range b.outputs {
-		ch <- m
+func NewBroker[T any]() *Broker[T] {
+	return &Broker[T]{
+		stopCh:    make(chan struct{}),
+		publishCh: make(chan T, 1),
+		subCh:     make(chan chan T, 1),
+		unsubCh:   make(chan chan T, 1),
 	}
 }
 
-func (b *broadcaster) run() {
+func (b *Broker[T]) Start() {
+	subs := map[chan T]struct{}{}
 	for {
 		select {
-		// On any input, broadcast to all registered listeners, aka outputs
-		case m := <-b.input:
-			b.broadcast(m)
-
-			// Handle registration/unregistration of listeners by channels.
-		case ch, ok := <-b.reg:
-			if ok {
-				b.outputs[ch] = true
-			} else {
-				return
+		case <-b.stopCh:
+			return
+		case msgCh := <-b.subCh:
+			subs[msgCh] = struct{}{}
+		case msgCh := <-b.unsubCh:
+			delete(subs, msgCh)
+		case msg := <-b.publishCh:
+			for msgCh := range subs {
+				msgCh <- msg
 			}
-		case ch := <-b.unreg:
-			delete(b.outputs, ch)
 		}
 	}
 }
 
-func (b *broadcaster) Register(newch chan<- interface{}) {
-	b.reg <- newch
+func (b *Broker[T]) Stop() {
+	close(b.stopCh)
 }
 
-func (b *broadcaster) Unregister(newch chan<- interface{}) {
-	b.unreg <- newch
+func (b *Broker[T]) Subscribe() chan T {
+	msgCh := make(chan T, 5)
+	b.subCh <- msgCh
+	return msgCh
 }
 
-func (b *broadcaster) Close() error {
-	close(b.reg)
-	close(b.unreg)
-	return nil
+func (b *Broker[T]) Unsubscribe(msgCh chan T) {
+	b.unsubCh <- msgCh
 }
 
-func (b *broadcaster) Submit(m interface{}) {
-	if b != nil {
-		b.input <- m
-	}
+func (b *Broker[T]) Publish(msg T) {
+	b.publishCh <- msg
 }
