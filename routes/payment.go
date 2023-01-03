@@ -62,8 +62,9 @@ func CreatePayment(c *fiber.Ctx) error {
 	if err := c.BodyParser(&payment); err != nil {
 		return c.Status(400).JSON(err.Error())
 	}
-
 	database.Database.Db.Create(&payment)
+	b.Publish(payment)
+
 	return c.Status(200).JSON(CreateResponsePayment(payment))
 }
 
