@@ -30,6 +30,7 @@ func setupRoutes(app *fiber.App) {
 	// Login route
 	app.Post("/login", routes.Login)
 	app.Get("/api/stream", routes.GetStream)
+	app.Post("/api/users", routes.CreateUser)
 
 	app.Use(jwtware.New(jwtware.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -57,7 +58,6 @@ func setupRoutes(app *fiber.App) {
 
 	// POST routes
 	// =================
-	app.Post("/api/users", restricted, routes.CreateUser)
 	app.Post("/api/products", restricted, routes.CreateProduct)
 	app.Post("/api/payments", restricted, routes.CreatePayment)
 
