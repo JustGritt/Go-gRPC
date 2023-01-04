@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /
 definitions:
   routes.Payment:
     properties:
@@ -136,6 +136,36 @@ paths:
           schema:
             type: string
       summary: Get payment by id
+      tags:
+      - payments
+    put:
+      consumes:
+      - application/json
+      description: Update the payment with the given id
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Payment
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/routes.Payment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.Payment'
+        "400":
+          description: Payment not found
+          schema:
+            type: string
+      summary: Update the payment with the given id
       tags:
       - payments
   /api/products:

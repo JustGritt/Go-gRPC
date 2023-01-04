@@ -102,7 +102,9 @@ func CreatePayment(c *fiber.Ctx) error {
 
 	// Check if the price of the product is the same as the price of the payment
 	if product.Price != payment.Price {
-		return c.Status(400).JSON("Price of the product is not the same as the price of the payment")
+		// add the correct price to the payment
+		payment.Price = product.Price
+		//return c.Status(400).JSON("Price of the product is not the same as the price of the payment")
 	}
 
 	database.Database.Db.Create(&payment)
@@ -148,6 +150,7 @@ func DeletePayment(c *fiber.Ctx) error {
 // @Param payment body Payment true "Payment"
 // @Success 200 {object} Payment
 // @Failure 400 {string} string "Payment not found"
+// @Router /api/payments/{id} [put]
 func UpdatePayment(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 

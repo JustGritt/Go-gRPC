@@ -16,7 +16,7 @@
         "version": "1.0"
     },
     "host": "localhost:3000",
-    "basePath": "/api/v1",
+    "basePath": "/",
     "paths": {
         "/api/payments": {
             "get": {
@@ -108,6 +108,51 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.Payment"
+                        }
+                    },
+                    "400": {
+                        "description": "Payment not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update the payment with the given id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Update the payment with the given id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Payment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment",
+                        "name": "payment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.Payment"
+                        }
                     }
                 ],
                 "responses": {

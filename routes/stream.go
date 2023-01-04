@@ -3,7 +3,6 @@ package routes
 import (
 	"bufio"
 	"fmt"
-	"sync"
 
 	"github.com/JustGritt/go-grpc/broadcast"
 	"github.com/JustGritt/go-grpc/database"
@@ -13,13 +12,10 @@ import (
 )
 
 type Stream struct {
-	Notifier               chan []models.Payment
-	newClients             chan chan []byte
-	closeClientConnections chan chan []byte
-	clients                map[chan []byte]bool
+	Notifier chan []models.Payment
 }
 
-var once sync.Once
+// var once sync.Once
 var b = broadcast.NewBroker[models.Payment]()
 
 func GetStream(c *fiber.Ctx) error {

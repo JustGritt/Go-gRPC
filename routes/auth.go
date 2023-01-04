@@ -31,12 +31,6 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(400).JSON("Invalid credentials")
 	}
 
-	/*
-		if err := existingUser.Password == user.Password; !err {
-			return c.Status(400).JSON("Invalid credentials " + existingUser.Password + " " + user.Password)
-		}
-	*/
-
 	// Create the Claims
 	claims := jwt.MapClaims{
 		"name":    existingUser.FirstName,
